@@ -7,6 +7,7 @@ Auteurs : Nathan Fradet, Ali Elmoussaoui
 
 ----------
 #### Structure du répertoire
+```
 .
 ├── aws_credentials         [caché pour des questions de sécurité]
 ├── iac_boto3.py            [code pour lancer une pile sur cloudformation]
@@ -15,3 +16,4 @@ Auteurs : Nathan Fradet, Ali Elmoussaoui
     ├── ec2.json
     ├── s3.json
     └── vpc.yaml
+```
