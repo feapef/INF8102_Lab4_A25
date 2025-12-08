@@ -1,0 +1,34 @@
+Description: Add VPC flowlogs and send it to S3 bucket.
+
+Parameters:
+  EnvironmentName:
+    Description: environment is prefixed to resource names
+    Type: String
+  S3ARN:
+    Description: S3 bucket to whom send the flowlogs
+    Type: String
+  VPCID:
+    Description: VPC id to monitor with flowlogs
+    Type: String
+
+
+Resources :
+  FlowLogs: 
+    Type: AWS::EC2::FlowLog
+    Properties:
+      ResourceType: VPC
+      ResourceID: !Ref VPCID
+      LogDestination: !Ref S3ARN
+      LogDestinationType: s3
+      LogFormat: '${version} ${vpc-id} ${subnet-id} ${instance-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport}
+  ${protocol} ${tcp-flags} ${type} ${pkt-srcaddr} ${pkt-dstaddr}'
+      MaxAggregationInterval: 600
+      TrafficType: REJECT
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+Outputs:
+  FlowLogs: 
+    Description: VPC flows that send to S3 bucket
+    Value: !Ref FlowLogs

@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy a secure EC2 instance on a subnet and Cloud watch alarm for all instances
+
+Parameters:
+  EnvironmentName:
+    Description: environment is prefixed to resource names
+    Type: String
+  SubnetId: 
+    Description: Subnet id for the EC2 
+    Type: String
+
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: polystudent-keypair
+      InstanceType: t2.micro
+      ImageId: ami-0ff8a91507f77f867
+      AvailabilityZone: us-east-1a
+      SecurityGroupIds:
+        - polystudent-sg
+      SubnetId: !Ref SubnetId
+      IamInstanceProfile: LabRole
+      BlockDeviceMappings:
+        - DeviceName: /dev/sdal
+          Ebs:
+            DeleteOnTermination: false
+            VolumeSize: 80
+      Tags:
+        - Key: Name
+          Value: !Ref EnvironmentName
+
+
+  CloudWatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm that controls the ingress number of packets on all
+instances. The average threshold is 1000 pkts/sec"
+      AlarmName: !Sub {EnvironmentName}-cloudwatch_alarm
+      MetricName: NetworkPacketSIn
+      Namespace: AWS/EC2
+      Dimensions:
+        - Name: InstanceId
+          Value: "*"
+      ComparisonOperator: GreaterThanThreshold
+      Statistic: Average
+      Period: 60
+      Threshold: 10000
+      EvaluationPeriods: 1
+      TreatMissingData: "notBreaching"  
+
+Outputs: 
+  EC2Instance:
+    Description: "ID de l'instance EC2 créée."
+    Value: !Ref EC2Instance
+  CloudWatchAlarm:
+    Description: "Nom de l'alarme CloudWatch créée."
+    Value: !Ref CloudWatchAlarm

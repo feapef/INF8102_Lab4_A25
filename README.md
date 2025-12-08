@@ -3,7 +3,13 @@
 
 Repertoire git pour le lab 4 sur l'IaC avec python
 
-Auteurs : Nathan Fradet, Ali Elmoussaoui
+----------
+#### Utilisation
+
+- Créer le fichier **aws_credentials** avec vos identifiants. 
+- Importer ses templates dans le dossier **templates** 
+- Modifier les paramètres dans **iac_boto3.py**. 
+- Executer la commande : `python3 iac_boto3.py`
 
 ----------
 #### Structure du répertoire
