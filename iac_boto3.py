@@ -1,4 +1,5 @@
 import boto3 
+import botocore
 import time
 import yaml,json
 
@@ -6,6 +7,7 @@ aws_credentials_filename    = "aws_credentials"
 
 #### TO MODIFY ####
 role_name_arn               = "arn:aws:iam::381492117045:role/LabRole"
+
 
 
 
@@ -23,20 +25,21 @@ role_name_arn               = "arn:aws:iam::381492117045:role/LabRole"
 #        }
 
 # EX3.1 VPC Flow Logs
-template_filename           = "./templates/ec2.yaml"
-stack_name                  = "polystudent-stack-ec2"
-environment_vars            = {
-        "EnvironmentName": "polystudent-ec2",
-        "S3ARN": "arn:aws:s3:::polystudents3-20251126 ",
-        "VPCID": "vpc-0fe82f6dd091740ad"
-        }
+#template_filename           = "./templates/vpc_flowlogs.yaml"
+#stack_name                  = "polystudent-stack-flowlogs"
+#environment_vars            = {
+#        "EnvironmentName": "polystudent-flowlogs",
+#        "S3ARN": "arn:aws:s3:::polystudents3-20251126 ",
+#        "VPCID": "vpc-058d035d1dc226671"
+#        }
 
-# EX3.2 EC2 + Cloud_watch bucket
+## EX3.2 EC2 + Cloud_watch bucket
 template_filename           = "./templates/ec2.yaml"
 stack_name                  = "polystudent-stack-ec2"
 environment_vars            = {
         "EnvironmentName": "polystudent-ec2",
-        "SubnetId": "subnet-03ec933d3a467803d"
+        "SubnetId": "subnet-0e28668fc757940f7",
+        "Ec2SecurityGroup": "sg-0617665dba6b116e6"
         }
 
 ##################
@@ -58,7 +61,7 @@ def check_status_stack(client,stack_name):
 def list_resources(client,stack_name):
     try : 
         rep = client.list_stack_resources(StackName=stack_name)["StackResourceSummaries"]
-    except client.exceptions.ClientError as e :
+    except botocore.exceptions.ClientError as e :
         # stack not found 
         if e.response['Error']['Code'] == 'ValidationError':
             print(f"Stack '{stack_name}' does not exist.")
@@ -67,7 +70,7 @@ def list_resources(client,stack_name):
             print(f"An unexpected error occurred: {e}")
             raise  # Re-raise unexpected errors
     for r in rep:
-        print(f"\t[{r['ResourceType']}] \t{r['LogicalResourceId']} - \t{r['ResourceStatus']}")
+        print(f"\t[{r['ResourceType']}] \t{r['LogicalResourceId']}({r['PhysicalResourceId']}) - \t{r['ResourceStatus']}")
 
 def delete_stack_if_exists(client, stack_name):
     try:
@@ -82,11 +85,19 @@ def delete_stack_if_exists(client, stack_name):
         waiter = client.get_waiter('stack_delete_complete')
         waiter.wait(StackName=stack_name)
         print(f"Stack {stack_name} deleted successfully.")
-    except client.exceptions.ClientError as e:
+    except botocore.exceptions.ClientError as e:
         if "does not exist" in str(e):
             print(f"Stack {stack_name} does not exist. Proceeding to create.")
         else:
             print(f"Error checking stack: {e}")
+            raise
+    except botocore.exceptions.WaiterError as e :
+        if "ValidationError" in str(e):
+            print(f"Validation error occurred: {e}")
+            last_error = e.last_response.get('Error', {})
+            print(f"Error details: {last_error}")
+        else:
+            print(f"Unexpected waiter error: {e}")
             raise
 
 def create_stack(client,stack_name,environment_vars,template_body,role_name_arn):
@@ -113,9 +124,17 @@ def create_stack(client,stack_name,environment_vars,template_body,role_name_arn)
         waiter = client.get_waiter('stack_create_complete')
         waiter.wait(StackName=stack_name)
         print("Stack creation done")
-    except client.exceptions.ClientError as e:
+    except botocore.exceptions.ClientError as e:
         print(f"Error creating stack: {e}")
         raise
+    except botocore.exceptions.WaiterError as e :
+        if "ValidationError" in str(e):
+            print(f"Validation error occurred: {e}")
+            last_error = e.last_response.get('Error', {})
+            print(f"Error details: {last_error}")
+        else:
+            print(f"Unexpected waiter error: {e}")
+            raise
     print(response)
 
 
