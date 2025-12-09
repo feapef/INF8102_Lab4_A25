@@ -1,1 +1,2 @@
-aws_credentials
+./aws_credentials
+./polystudent-keypair.pem
