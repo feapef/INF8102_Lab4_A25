@@ -7,7 +7,7 @@
             "Type": "AWS::S3::Bucket",
             "Description": "S3 bucket creation",
             "Properties": {
-                "BucketName": "polystudents3-20251126",
+                "BucketName": "polystudents3-20251210",
                 "AccessControl": "Private",
                 "PublicAccessBlockConfiguration": {
                     "BlockPublicAcls": true,
@@ -20,7 +20,7 @@
                         {
                             "ServerSideEncryptionByDefault": {
                                 "SSEAlgorithm": "aws:kms",
-                                "KMSMasterKeyID": "arn:aws:kms:us-east-1:381492117045:key/e635c16f-f64c-48a7-986d-5f16094b0908"
+                                "KMSMasterKeyID": "arn:aws:kms:us-east-1:381492157658:key/f5681c6d-a893-4d7f-815c-86cb16e72dd8"
                             }
                         }
                     ]

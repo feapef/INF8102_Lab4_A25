@@ -1,0 +1,136 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Backup bucket and CloudTrail for existing bucket polystudents3-20251210.",
+  "Resources": {
+    "S3BackupBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "polystudents3-20251210-back",
+        "AccessControl": "Private",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true
+        },
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "aws:kms",
+                "KMSMasterKeyID": "arn:aws:kms:us-east-1:381492157658:key/f5681c6d-a893-4d7f-815c-86cb16e72dd8"
+              }
+            }
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        }
+      }
+    },
+    "S3BackupBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "S3BackupBucket"
+        },
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AWSCloudTrailAclCheck",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:GetBucketAcl",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3BackupBucket"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Sid": "AWSCloudTrailWrite",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "cloudtrail.amazonaws.com"
+              },
+              "Action": "s3:PutObject",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:s3:::",
+                    {
+                      "Ref": "S3BackupBucket"
+                    },
+                    "/AWSLogs/",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    "/*"
+                  ]
+                ]
+              },
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "S3CloudTrail": {
+      "Type": "AWS::CloudTrail::Trail",
+      "DependsOn": [
+        "S3BackupBucketPolicy"
+      ],
+      "Properties": {
+        "IsLogging": true,
+        "S3BucketName": {
+          "Ref": "S3BackupBucket"
+        },
+        "IncludeGlobalServiceEvents": false,
+        "IsMultiRegionTrail": false,
+        "TrailName": "polystudent-trail",
+        "EventSelectors": [
+          {
+            "ReadWriteType": "WriteOnly",
+            "IncludeManagementEvents": false,
+            "DataResources": [
+              {
+                "Type": "AWS::S3::Object",
+                "Values": [
+                  "arn:aws:s3:::polystudents3-20251210/"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "S3BackupBucketName": {
+      "Description": "Backup bucket where objects are replicated and CloudTrail logs are stored",
+      "Value": {
+        "Ref": "S3BackupBucket"
+      }
+    },
+    "CloudTrailName": {
+      "Description": "Name of CloudTrail that logs write events on source bucket",
+      "Value": {
+        "Ref": "S3CloudTrail"
+      }
+    }
+  }
+}
